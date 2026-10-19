@@ -66,8 +66,10 @@ struct MonthDial: View {
     }
 
     private func point(center: CGPoint, radius: CGFloat, angle: Double) -> CGPoint {
-        CGPoint(x: center.x + cos(angle) * radius,
-                y: center.y + sin(angle) * radius)
+        let ca = cos(angle)
+        let sa = sin(angle)
+        return CGPoint(x: center.x + ca * radius,
+                       y: center.y + sa * radius)
     }
 
     var body: some View {
@@ -140,9 +142,11 @@ struct NeedleShape: Shape {
 
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
+        let ca = cos(angle)
+        let sa = sin(angle)
         var p = Path()
-        p.move(to: CGPoint(x: c.x + cos(angle) * inner, y: c.y + sin(angle) * inner))
-        p.addLine(to: CGPoint(x: c.x + cos(angle) * outer, y: c.y + sin(angle) * outer))
+        p.move(to: CGPoint(x: c.x + ca * inner, y: c.y + sa * inner))
+        p.addLine(to: CGPoint(x: c.x + ca * outer, y: c.y + sa * outer))
         return p
     }
 }
