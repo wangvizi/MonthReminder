@@ -162,7 +162,7 @@ struct EventCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(event.colorKey.gradient)
 
-            Text("\(daysLeft)天后")
+            Text(daysLeft == 0 ? "今天" : "\(daysLeft)天后")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(event.colorKey.base)
                 .padding(.horizontal, 8)

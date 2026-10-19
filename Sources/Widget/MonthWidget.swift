@@ -78,6 +78,8 @@ struct SmallWidgetView: View {
     let event: MonthEvent
     let date: Date
 
+    private var daysLeft: Int { MonthMath.daysRemaining(untilDay: event.day, from: date) }
+
     var body: some View {
         VStack(spacing: 4) {
             Text(event.name)
@@ -88,16 +90,22 @@ struct SmallWidgetView: View {
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
             Spacer(minLength: 0)
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text("剩")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-                Text("\(MonthMath.daysRemaining(untilDay: event.day, from: date))")
-                    .font(.system(size: 34, weight: .heavy))
+            if daysLeft == 0 {
+                Text("今天")
+                    .font(.system(size: 24, weight: .heavy))
                     .foregroundColor(.black)
-                Text("天")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("剩")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                    Text("\(daysLeft)")
+                        .font(.system(size: 34, weight: .heavy))
+                        .foregroundColor(.black)
+                    Text("天")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -112,6 +120,7 @@ struct RowListView: View {
     var body: some View {
         VStack(spacing: 0) {
             ForEach(events.indices, id: \.self) { i in
+                let daysLeft = MonthMath.daysRemaining(untilDay: events[i].day, from: date)
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(events[i].name)
@@ -123,16 +132,22 @@ struct RowListView: View {
                             .foregroundColor(.gray)
                     }
                     Spacer()
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("剩")
-                            .font(.system(size: 13))
-                            .foregroundColor(.gray)
-                        Text("\(MonthMath.daysRemaining(untilDay: events[i].day, from: date))")
-                            .font(.system(size: 28, weight: .heavy))
+                    if daysLeft == 0 {
+                        Text("今天")
+                            .font(.system(size: 20, weight: .heavy))
                             .foregroundColor(.black)
-                        Text("天")
-                            .font(.system(size: 13))
-                            .foregroundColor(.gray)
+                    } else {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("剩")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                            Text("\(daysLeft)")
+                                .font(.system(size: 28, weight: .heavy))
+                                .foregroundColor(.black)
+                            Text("天")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
                 .padding(.vertical, 7)
