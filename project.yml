@@ -1,7 +1,7 @@
 name: MonthReminder
-# 固定 pbxproj 格式版本，兼容 runner 上的 Xcode 15/16（新版 xcodegen 默认会生成 Xcode 26 的 77 格式）
-objectVersion: 56
 options:
+  # 固定 pbxproj 格式为 Xcode 15 系（objectVersion 63），兼容 runner 的 Xcode 15.4；旧版 xcodegen 会忽略此键
+  projectFormat: xcode15_3
   deploymentTarget:
     iOS: "15.0"
   createIntermediateGroups: true
