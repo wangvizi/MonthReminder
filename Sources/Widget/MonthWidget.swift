@@ -19,8 +19,15 @@ struct MonthWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MonthWidgetEntry>) -> Void) {
         let now = Date()
-        let entry = MonthWidgetEntry(date: now, events: EventStore.shared.events)
-        completion(Timeline(entries: [entry], policy: .after(MonthMath.nextMidnight(after: now))))
+        let events = EventStore.shared.events
+        // 每小时一个 entry，.atEnd 让系统每小时重新读取共享数据，
+        // 即使 reloadTimelines 通知丢失也能自愈，同时保证跨零点天数自动翻转
+        var entries: [MonthWidgetEntry] = []
+        for h in 0..<24 {
+            let t = h == 0 ? now : (Calendar.current.date(byAdding: .hour, value: h, to: now) ?? now)
+            entries.append(MonthWidgetEntry(date: t, events: events))
+        }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 
@@ -52,6 +59,10 @@ struct MonthWidgetView: View {
                 Text("打开 App 添加每月提醒")
                     .font(.system(size: 12))
                     .foregroundColor(.gray)
+                // 临时诊断行：定位 App/Widget 共享通道问题，确认后移除
+                Text(EventStore.shared.diagnostic)
+                    .font(.system(size: 9))
+                    .foregroundColor(.gray.opacity(0.7))
             }
         } else if family == .systemSmall {
             SmallWidgetView(event: sorted[0], date: entry.date)

@@ -5,23 +5,54 @@ import WidgetKit
 #endif
 
 /// App 与 Widget 共用的数据存储（App Group）
+/// 双通道写入：UserDefaults suite + 共享容器文件，任一通道可用即可互通
 final class EventStore: ObservableObject {
     static let appGroupID = "group.com.indie.monthremind"
     static let shared = EventStore()
     private static let storageKey = "month.events.v1"
+    private static let fileName = "events.json"
 
     @Published var events: [MonthEvent] = [] {
         didSet { persist() }
     }
 
-    private let defaults: UserDefaults
+    /// 诊断信息：widget 空态时显示，便于定位共享通道是否可用
+    let diagnostic: String
+
+    private let defaults: UserDefaults?
+
+    private var fileURL: URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: Self.appGroupID)?
+            .appendingPathComponent(Self.fileName)
+    }
 
     init() {
-        defaults = UserDefaults(suiteName: Self.appGroupID) ?? .standard
-        if let data = defaults.data(forKey: Self.storageKey),
-           let decoded = try? JSONDecoder().decode([MonthEvent].self, from: data) {
-            events = decoded
+        let d = UserDefaults(suiteName: Self.appGroupID)
+        defaults = d
+
+        let suiteBytes = d?.data(forKey: Self.storageKey)?.count ?? -1
+        let url = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: Self.appGroupID)?
+            .appendingPathComponent(Self.fileName)
+        let fileBytes = (url.flatMap { try? Data(contentsOf: $0) })?.count ?? -1
+
+        let loaded = Self.load(defaults: d, fileURL: url)
+        diagnostic = "suite=\(d == nil ? "nil" : "ok")/\(suiteBytes)B file=\(fileBytes)B n=\(loaded?.count ?? 0)"
+        events = loaded ?? []
+    }
+
+    private static func load(defaults d: UserDefaults?, fileURL: URL?) -> [MonthEvent]? {
+        let decoder = JSONDecoder()
+        if let d, let data = d.data(forKey: storageKey),
+           let v = try? decoder.decode([MonthEvent].self, from: data) {
+            return v
         }
+        if let url = fileURL, let data = try? Data(contentsOf: url),
+           let v = try? decoder.decode([MonthEvent].self, from: data) {
+            return v
+        }
+        return nil
     }
 
     func upsert(_ event: MonthEvent) {
@@ -37,11 +68,13 @@ final class EventStore: ObservableObject {
     }
 
     private func persist() {
-        if let data = try? JSONEncoder().encode(events) {
-            defaults.set(data, forKey: Self.storageKey)
+        let data = try? JSONEncoder().encode(events)
+        defaults?.set(data, forKey: Self.storageKey)
+        if let url = fileURL {
+            try? data?.write(to: url, options: .atomic)
         }
         #if canImport(WidgetKit)
-        WidgetCenter.shared.reloadTimelines(ofKind: monthWidgetKind)
+        WidgetCenter.shared.reloadAllTimelines()
         #endif
     }
 
