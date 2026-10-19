@@ -1,0 +1,7 @@
+build/
+Payload/
+*.ipa
+.DS_Store
+MonthReminder.xcodeproj/
+xcuserdata/
+DerivedData/

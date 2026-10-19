@@ -1,0 +1,45 @@
+name: MonthReminder
+options:
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  MonthReminder:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/App
+      - Sources/Shared
+      - Sources/Assets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.indie.monthremind
+        PRODUCT_NAME: MonthReminder
+        INFOPLIST_FILE: Config/App-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/App.entitlements
+    dependencies:
+      - target: MonthWidgetExtension
+  MonthWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Sources/Widget
+      - Sources/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.indie.monthremind.widget
+        PRODUCT_NAME: MonthWidget
+        INFOPLIST_FILE: Config/Widget-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/Widget.entitlements
+        SKIP_INSTALL: YES
+schemes:
+  MonthReminder:
+    build:
+      targets:
+        MonthReminder: all

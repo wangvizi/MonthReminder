@@ -1,0 +1,49 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        run: |
+          xcodebuild -project MonthReminder.xcodeproj -scheme MonthReminder \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= \
+            -derivedDataPath build build
+
+      - name: Package IPA (ad-hoc sign with entitlements)
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -n 1)
+          echo "App: $APP"
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          # 先签扩展再签主 App，附带 App Group entitlements（TrollStore / 越狱环境可直接用）
+          for appex in Payload/MonthReminder.app/PlugIns/*.appex; do
+            codesign --force --sign - --entitlements Config/Widget.entitlements "$appex"
+          done
+          codesign --force --sign - --entitlements Config/App.entitlements Payload/MonthReminder.app
+          rm -f MonthReminder.ipa
+          zip -qry MonthReminder.ipa Payload
+          ls -la MonthReminder.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MonthReminder-ipa
+          path: MonthReminder.ipa
