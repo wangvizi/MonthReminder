@@ -12,16 +12,16 @@ struct MonthWidgetProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (MonthWidgetEntry) -> Void) {
-        let events = EventStore.shared.events
+        let events = EventStore.loadCurrentEvents()
         completion(MonthWidgetEntry(date: Date(),
                                     events: events.isEmpty ? EventStore.previewEvents : events))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MonthWidgetEntry>) -> Void) {
         let now = Date()
-        let events = EventStore.shared.events
-        // 每小时一个 entry，.atEnd 让系统每小时重新读取共享数据，
-        // 即使 reloadTimelines 通知丢失也能自愈，同时保证跨零点天数自动翻转
+        // 每次请求都重新读盘，避免扩展进程复用单例缓存导致“只显示第一次的内容”
+        let events = EventStore.loadCurrentEvents()
+        // 每小时一个 entry，.atEnd 让系统每小时重新读取，reload 通知丢失时也能自愈并跨零点翻转
         var entries: [MonthWidgetEntry] = []
         for h in 0..<24 {
             let t = h == 0 ? now : (Calendar.current.date(byAdding: .hour, value: h, to: now) ?? now)

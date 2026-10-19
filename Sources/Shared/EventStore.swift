@@ -12,9 +12,7 @@ final class EventStore: ObservableObject {
     private static let storageKey = "month.events.v1"
     private static let fileName = "events.json"
 
-    @Published var events: [MonthEvent] = [] {
-        didSet { persist() }
-    }
+    @Published var events: [MonthEvent] = []
 
     /// 诊断信息：widget 空态时显示，便于定位共享通道是否可用
     let diagnostic: String
@@ -42,6 +40,15 @@ final class EventStore: ObservableObject {
         events = loaded ?? []
     }
 
+    /// 供 Widget 每次有时间线请求时读取最新数据，绕过进程内单例缓存
+    static func loadCurrentEvents() -> [MonthEvent] {
+        let d = UserDefaults(suiteName: appGroupID)
+        let url = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)?
+            .appendingPathComponent(fileName)
+        return load(defaults: d, fileURL: url) ?? []
+    }
+
     private static func load(defaults d: UserDefaults?, fileURL: URL?) -> [MonthEvent]? {
         let decoder = JSONDecoder()
         if let d, let data = d.data(forKey: storageKey),
@@ -61,10 +68,12 @@ final class EventStore: ObservableObject {
         } else {
             events.append(event)
         }
+        persist()
     }
 
     func delete(_ event: MonthEvent) {
         events.removeAll { $0.id == event.id }
+        persist()
     }
 
     private func persist() {
