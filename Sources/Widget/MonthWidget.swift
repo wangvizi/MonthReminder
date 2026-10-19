@@ -90,7 +90,6 @@ struct SmallWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(8)
     }
 }
 
@@ -132,8 +131,6 @@ struct RowListView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
     }
 }
 
@@ -143,7 +140,10 @@ extension View {
         if #available(iOS 17.0, *) {
             self.containerBackground(for: .widget) { color }
         } else {
-            self.background(color)
+            // iOS 17 以下系统不会自动加内容边距，这里手动补齐，避免文字贴边
+            self.padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(color)
         }
     }
 }
