@@ -12,8 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install xcodegen
-        run: brew install xcodegen
+      - name: Install xcodegen 2.42.0 (pinned)
+        run: |
+          # brew 最新版(2.46)会生成 objectVersion 77 的 pbxproj，runner 的 Xcode 15.4 打不开；固定用 2.42.0 预编译二进制
+          curl -sL -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip
+          unzip -oq xcodegen.zip -d xcodegen-bin
+          ls -la xcodegen-bin
+          chmod +x xcodegen-bin/xcodegen
+          echo "$PWD/xcodegen-bin" >> "$GITHUB_PATH"
 
       - name: Generate Xcode project
         run: xcodegen generate
